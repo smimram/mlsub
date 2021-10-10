@@ -1,0 +1,7 @@
+(ocamllex (modules lexer))
+(menhir (modules parser))
+(executable (name mlsub))
+
+(rule
+ (alias  runtest)
+ (action (run ./mlsub.exe test.mlsub)))
