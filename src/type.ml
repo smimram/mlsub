@@ -1,5 +1,14 @@
 (** Operations on types. *)
 
+(** Ground types. *)
+module Ground = struct
+  type t = Int | String
+
+  let to_string = function
+    | Int -> "int"
+    | String -> "string"
+end
+
 (** Level for type variables. *)
 type level = int
 
@@ -11,15 +20,11 @@ type var = {
   mutable upper : t list (* upper bound *)
 }
 
-(** Ground types. *)
-and ground =
-  | Int | String
-
 (** Types. *)
 and t =
   | Var of var
-  | Ground of ground
-  | Fun of t * t
+  | Ground of Ground.t
+  | Arr of t * t
   | Record of (string * t) list
 
 (** Type scheme: variables above the level should be instantiated. *)
@@ -27,24 +32,28 @@ and scheme = level * t
 
 let rec to_string = function
   | Var x -> "'a" ^ string_of_int x.id
-  | Ground Int -> "int"
-  | Ground String -> "string"
-  | Fun (a, b) -> to_string a ^ " -> " ^ to_string b
+  | Ground g -> Ground.to_string g
+  | Arr (a, b) -> to_string a ^ " -> " ^ to_string b
   | Record r ->
     let r = List.map (fun (l,a) -> l ^ " : " ^ to_string a) r |> String.concat ", " in
     "{" ^ r ^ "}"
+
+(** Equality between variables. *)
+let var_eq (x:var) (y:var) =
+  (* we want _physical_ equality here *)
+  x == y
 
 (** Equality between types. *)
 let rec eq t u =
   (* The style of the match is a bit heavy but we want to avoid having an _ at
      the end in order to detect it if we extend the type t. *)
   match t, u with
-  | Var x, Var y -> x == y (* this is _physical_ equality here *)
+  | Var x, Var y -> var_eq x y
   | Var _, _ -> false
   | Ground t, Ground u -> t = u
   | Ground _, _ -> false
-  | Fun (t, u), Fun (t', u') -> eq t t' && eq u u'
-  | Fun _, _ -> false
+  | Arr (t, u), Arr (t', u') -> eq t t' && eq u u'
+  | Arr _, _ -> false
   | Record r, Record r' -> List.length r = List.length r' && List.for_all2 (fun (l,t) (l',t') -> l = l' && eq t t') r r'
   | Record _, _ -> false
 
@@ -67,7 +76,7 @@ let rec ( <: ) =
         cache := (a,b) :: !cache;
         match a, b with
         | Ground a, Ground b when a = b -> ()
-        | Fun (a, b), Fun (a', b') -> a' <: a; b <: b'
+        | Arr (a, b), Arr (a', b') -> a' <: a; b <: b'
         | Record r, Record s ->
           (* the fields of the _second_ should be present in the first *)
           List.iter (fun (l, a) -> try List.assoc l r <: a with Not_found -> raise (Error ("missing field: " ^ l))) s
@@ -85,15 +94,16 @@ let rec infer ?(level=0) env t =
   let infer ?(level=level) = infer ~level in
   match t with
   | Lang.Int _ -> Ground Int
+  | Lang.String _ -> Ground String
   | Var x -> (try List.assoc x env with Not_found -> failwith ("Unbound variable " ^ x))
   | Abs (x, t) ->
     let a = var level in
     let b = infer ((x,a)::env) t in
-    Fun (a, b)
+    Arr (a, b)
   | App (t, u) ->
     let a = infer env u in
     let b = var level in
-    infer env t <: Fun (a, b);
+    infer env t <: Arr (a, b);
     b
   | Record r ->
     let r = List.map (fun (l, t) -> l, infer env t) r in

@@ -6,6 +6,7 @@ type var = string
 (** Terms of the language. *)
 type t =
   | Int of int
+  | String of string
   | Var of var
   | Abs of var * t
   | App of t * t
@@ -16,6 +17,7 @@ type t =
 (** String representation of a program. *)
 let rec to_string = function
   | Int n -> string_of_int n
+  | String s -> "\"" ^ s ^ "\""
   | Var x -> x
   | Abs (x, t) -> Printf.sprintf "(fun %s -> %s)" x (to_string t)
   | App (t, u) -> Printf.sprintf "(%s %s)" (to_string t) (to_string u)

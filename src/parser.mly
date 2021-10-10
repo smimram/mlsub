@@ -7,6 +7,7 @@ open Lang
 %token LACC RACC COMMA DOT
 %token<string> IDENT
 %token<int> INT
+%token<string> STRING
 %token EOF
 
 %start prog
@@ -17,18 +18,19 @@ open Lang
 %%
 
 prog:
-   | decls EOF { $1 }
+  | decls EOF { $1 }
 
 decls:
-   | decl SC SC decls { $1::$4 }
-   | decl SC SC { [$1] }
-   | { [] }
+  | decl SC SC decls { $1::$4 }
+  | decl SC SC { [$1] }
+  | { [] }
 
 decl:
-   | LET recursive IDENT EQ expr { $2, $3, $5 }
+  | LET recursive IDENT EQ expr { $2, $3, $5 }
 
 expr:
   | INT { Int $1 }
+  | STRING { String $1 }
   | IDENT { Var $1 }
   | FUN IDENT TO expr { Abs ($2, $4) }
   (* Precedence of application is tricky:
