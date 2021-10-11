@@ -4,6 +4,7 @@ let builtin =
   [
     "concat", Arr (Ground String, Ground String)
   ]
+let builtin = List.map (fun (x,a) -> (x,(-1,a))) builtin
 
 let () =
   let fname = Sys.argv.(1) in
@@ -32,7 +33,7 @@ let () =
          if r then failwith "toplevel recursive definitions are not handled yet";
          let a = Type.infer env t in
          Printf.printf "%s : %s\n%!" x (Type.to_string a);
-         (x,a)::env
+         (x,(-1,a))::env
       ) builtin prog
   in
   Printf.printf "\n# Pretty-printing of types\n\n%!";
@@ -41,7 +42,7 @@ let () =
       (fun env (_,x,t) ->
          let a = Type.infer env t in
          Printf.printf "%s : %s\n%!" x (Repr.to_string (Repr.make a));
-         (x,a)::env
+         (x,(-1,a))::env
       ) builtin prog
   in
   ()
