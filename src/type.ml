@@ -59,15 +59,67 @@ let rec eq t u =
 
 let scheme_of_type a : scheme = max_int, a
 
-(** Create a fresh variable. *)
-let var =
+let invar =
   let id = ref (-1) in
   fun ?(lower=[]) ?(upper=[]) level ->
     incr id;
-    Var { id = !id; level; lower; upper }
+    { id = !id; level; lower; upper }
+
+(** Create a fresh variable. *)
+let var ?lower ?upper level =
+  Var (invar ?lower ?upper level)
 
 (** A typing error. *)
 exception Error of string
+
+(** Level of a type. *)
+(* TODO: this could be memoized or associated to the type for efficiency *)
+let rec level = function
+  | Ground _ -> 0
+  | Var x -> x.level
+  | Arr (a, b) -> max (level a) (level b)
+  | Record r -> List.fold_left (fun l (_,a) -> max l (level a)) 0 r
+
+(** Polarity of a variable (true means positive). *)
+type polarity = bool
+
+(** A variable with a polarity. *)
+type pvar = var * polarity
+
+(** Equality on variables with polarity. *)
+let pvar_eq ((x,p):pvar) ((x',p'):pvar) = var_eq x x' && p = p'
+
+(** Copies a type up to its type variables of wrong level (and their extruded
+    bounds). *)
+let extrude lvl polarity a =
+  if level a <= lvl then a else
+    let l = ref [] in
+    let rec aux p = function
+      | Ground _ -> a
+      | Arr (a, b) -> Arr (aux (not p) a, aux p b)
+      | Record r ->
+        let r = List.map (fun (l,a) -> l, aux p a) r in
+        Record r
+      | Var x ->
+        (
+          match List.find_map (fun (y,a) -> if pvar_eq (x,p) y then Some a else None) !l with
+          | Some a -> a
+          | None ->
+            let x' = invar lvl in
+            if p then
+              (
+                x.upper <- Var x' :: x.upper;
+                x'.lower <- List.map (aux p) x.lower;
+              )
+            else
+              (
+                x.lower <- Var x' :: x.lower;
+                x'.upper <- List.map (aux p) x.upper;
+              );
+            Var x'
+        )
+    in
+    aux polarity a
 
 (** Ensure that the first type is a subtype of the second. *)
 let rec ( <: ) =
@@ -83,11 +135,23 @@ let rec ( <: ) =
           (* the fields of the _second_ should be present in the first *)
           List.iter (fun (l, a) -> try List.assoc l r <: a with Not_found -> raise (Error ("missing field: " ^ l))) s
         | Var x, b ->
-          x.upper <- b::x.upper;
-          List.iter (fun a -> a <: b) x.lower
+          if level b <= x.level then
+            (
+              x.upper <- b::x.upper;
+              List.iter (fun a -> a <: b) x.lower
+            )
+          else
+            a <: extrude x.level false b
         | a, Var x ->
-          x.lower <- a::x.lower;
-          List.iter (fun b -> a <: b) x.upper
+          if level a <= x.level then
+            (
+              x.lower <- a::x.lower;
+              List.iter (fun b -> a <: b) x.upper
+            )
+          else
+            (
+              extrude x.level true a <: b
+            )
         | _ -> raise (Error (Printf.sprintf "got %s but %s expected" (to_string a) (to_string b)))
       )
 
