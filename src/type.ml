@@ -125,6 +125,7 @@ let extrude lvl polarity a =
 let rec ( <: ) =
   let cache = ref [] in
   fun a b ->
+    (* It is crucial that we cache subtyping here because variables can occur in their own bounds. *)
     if List.exists (fun (a',b') -> eq a a' && eq b b') !cache then () else
       (
         cache := (a,b) :: !cache;
