@@ -31,7 +31,12 @@ and t =
 and scheme = level * t
 
 let rec to_string = function
-  | Var x -> "'a" ^ string_of_int x.id
+  | Var x ->
+    if x.lower = [] && x.upper = [] then "'a" ^ string_of_int x.id
+    else
+      let lower = List.map to_string x.lower |> String.concat ", " in
+      let upper = List.map to_string x.upper |> String.concat ", " in
+      Printf.sprintf "'a%d@(%s < %s)" x.id lower upper
   | Ground g -> Ground.to_string g
   | Arr (a, b) -> to_string a ^ " -> " ^ to_string b
   | Record r ->
