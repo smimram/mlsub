@@ -14,7 +14,7 @@ type level = int
 
 (** Variables. *)
 type var = {
-  id : int; (* a unique identifier (only used for printing) *)
+  id : int; (* a unique identifier *)
   level : level; (* level for generalization *)
   mutable lower : t list; (* lower bound *)
   mutable upper : t list (* upper bound *)
@@ -48,6 +48,7 @@ let var_eq (x:var) (y:var) =
   (* we want _physical_ equality here *)
   x == y
 
+(*
 (** Equality between types. *)
 let rec eq t u =
   (* The style of the match is a bit heavy but we want to avoid having an _ at
@@ -61,6 +62,13 @@ let rec eq t u =
   | Arr _, _ -> false
   | Record r, Record r' -> List.length r = List.length r' && List.for_all2 (fun (l,t) (l',t') -> l = l' && eq t t') r r'
   | Record _, _ -> false
+*)
+
+(** Equality between types. *)
+(* Note: this implementation is valid because equal variables are physically
+   equal (and thus compare is guarnateed to return 0 for those) and we have
+   unique identifiers for variables, which are compared first. *)
+let eq t u = compare t u = 0
 
 let scheme_of_type a : scheme = max_int, a
 
