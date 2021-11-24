@@ -180,11 +180,13 @@ let instantiate level ((l,a):scheme) =
           match List.find_map (fun (y, y') -> if var_eq x y then Some y' else None) !fresh with
           | Some x' -> x'
           | None ->
-            let lower = List.map aux x.lower in
-            let upper = List.map aux x.upper in
-            let x' = var ~lower ~upper level in
-            fresh := (x, x') :: !fresh;
-            x'
+            (* Things have to be performed in this order because a variable can
+               occur as a lower of itself. *)
+            let x' = invar level in
+            fresh := (x, Var x') :: !fresh;
+            x'.lower <- List.map aux x.lower;
+            x'.upper <- List.map aux x.upper;
+            Var x'
         )
     | Ground g -> Ground g
     | Arr (a, b) -> Arr (aux a, aux b)
