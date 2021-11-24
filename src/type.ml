@@ -44,6 +44,7 @@ let rec to_string = function
     "{" ^ r ^ "}"
 
 (** Equality between variables. *)
+(* Note: we could also use standard equality here, see eq. *)
 let var_eq (x:var) (y:var) =
   (* we want _physical_ equality here *)
   x == y
