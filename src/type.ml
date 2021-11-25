@@ -44,13 +44,16 @@ let rec to_string = function
     "{" ^ r ^ "}"
 
 (** Equality between variables. *)
-(* Note: we could also use standard equality here, see eq. *)
 let var_eq (x:var) (y:var) =
   (* we want _physical_ equality here *)
   x == y
 
-(*
 (** Equality between types. *)
+(* Note: we cannot use standard equality here, because it will recurse
+   infinitely when looking at Arr (..., Var x) = Arr (..., Var x): it will look
+   when testing whether Var x is the same as Var x. Note that this will not
+   happen for Var x at toplevel because it seems that OCaml tests for physical
+   equality first. *)
 let rec eq t u =
   (* The style of the match is a bit heavy but we want to avoid having an _ at
      the end in order to detect it if we extend the type t. *)
@@ -63,13 +66,6 @@ let rec eq t u =
   | Arr _, _ -> false
   | Record r, Record r' -> List.length r = List.length r' && List.for_all2 (fun (l,t) (l',t') -> l = l' && eq t t') r r'
   | Record _, _ -> false
-*)
-
-(** Equality between types. *)
-(* Note: this implementation is valid because equal variables are physically
-   equal (and thus compare is guarnateed to return 0 for those) and we have
-   unique identifiers for variables, which are compared first. *)
-let eq t u = compare t u = 0
 
 let scheme_of_type a : scheme = max_int, a
 
