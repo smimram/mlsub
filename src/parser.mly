@@ -12,7 +12,7 @@ open Lang
 
 %start prog
 %type<(bool * string * Lang.t) list> prog
-%nonassoc INT IDENT FUN LACC TO LET IN
+%nonassoc INT STRING IDENT FUN LACC TO LET IN
 %nonassoc APP
 %left DOT LPAR
 %%
