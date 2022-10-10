@@ -2,9 +2,10 @@
 
 (** Ground types. *)
 module Ground = struct
-  type t = Int | String
+  type t = Bool | Int | String
 
   let to_string = function
+    | Bool -> "bool"
     | Int -> "int"
     | String -> "string"
 end
@@ -202,6 +203,7 @@ let instantiate level ((l,a):scheme) =
 let rec infer ?(level=0) (env:(string*scheme) list) t =
   let infer ?(level=level) = infer ~level in
   match t with
+  | Lang.Bool _ -> Ground Bool
   | Lang.Int _ -> Ground Int
   | Lang.String _ -> Ground String
   | Var x -> (try instantiate level (List.assoc x env) with Not_found -> failwith ("Unbound variable " ^ x))

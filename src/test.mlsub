@@ -6,3 +6,4 @@ let omega x = x x;;
 let omega2 = omega omega;;
 let y f = (fun x -> f (x x)) (fun x -> f (x x));;
 let d f = { l = f 1 , r = f "a" };;
+let choose b x y = if b x y;;

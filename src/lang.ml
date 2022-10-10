@@ -5,6 +5,7 @@ type var = string
 
 (** Terms of the language. *)
 type t =
+  | Bool of bool
   | Int of int
   | String of string
   | Var of var
@@ -24,6 +25,7 @@ let rec abs l t =
 
 (** String representation of a program. *)
 let rec to_string = function
+  | Bool b -> string_of_bool b
   | Int n -> string_of_int n
   | String s -> "\"" ^ s ^ "\""
   | Var x -> x

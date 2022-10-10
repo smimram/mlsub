@@ -1,8 +1,10 @@
 (** Suppose that we have some builtins already defined. *)
 let builtin =
   let open Type in
+  let a = var 0 in
   [
-    "concat", Arr (Ground String, Ground String)
+    "concat", Arr (Ground String, Ground String);
+    "if", Arr (Ground Bool, Arr (a, Arr (a, a)))
   ]
 let builtin = List.map (fun (x,a) -> (x,(-1,a))) builtin
 
