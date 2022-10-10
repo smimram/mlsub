@@ -1,5 +1,5 @@
 {
-  open Parser
+open Parser
 }
 
 rule token = parse
