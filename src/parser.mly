@@ -11,7 +11,15 @@ open Lang
 %token EOF
 
 %start prog
-%type<(bool * string * Lang.t) list> prog
+
+%type<Lang.decl list> prog
+%type<Lang.decl list> decls
+%type<Lang.decl> decl
+%type<string list> args
+%type<Lang.t> expr
+%type<(string * Lang.t) list> record
+%type<bool> recursive
+
 %nonassoc INT STRING IDENT FUN LACC TO LET IN
 %nonassoc APP
 %left DOT LPAR
@@ -22,11 +30,14 @@ prog:
 
 decls:
   | decl SC SC decls { $1::$4 }
-  | decl SC SC { [$1] }
   | { [] }
 
 decl:
-  | LET recursive IDENT EQ expr { $2, $3, $5 }
+  | LET recursive IDENT args EQ expr { $2, $3, abs $4 $6 }
+
+args:
+  | IDENT args { $1::$2 }
+  | { [] }
 
 expr:
   | INT { Int $1 }

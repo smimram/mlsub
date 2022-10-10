@@ -14,6 +14,14 @@ type t =
   | Field of t * string (** field of a record *)
   | Let of bool * string * t * t (* let (recursive?) x = t in u *)
 
+(** A declaration: recursive, variable name, value. *)
+type decl = bool * string * t
+
+let rec abs l t =
+  match l with
+  | x::l -> Abs (x, abs l t)
+  | [] -> t
+
 (** String representation of a program. *)
 let rec to_string = function
   | Int n -> string_of_int n
