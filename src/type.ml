@@ -30,23 +30,31 @@ and t =
 (** Type scheme: variables strictly above the level should be instantiated. *)
 and scheme = level * t
 
-let rec to_string = function
-  | Var x ->
-    if x.lower = [] && x.upper = [] then "'a" ^ string_of_int x.id
-    else
-      let lower = List.map to_string x.lower |> String.concat ", " in
-      let upper = List.map to_string x.upper |> String.concat ", " in
-      Printf.sprintf "'a%d@(%s < %s)" x.id lower upper
-  | Ground g -> Ground.to_string g
-  | Arr (a, b) -> to_string a ^ " -> " ^ to_string b
-  | Record r ->
-    let r = List.map (fun (l,a) -> l ^ " : " ^ to_string a) r |> String.concat ", " in
-    "{" ^ r ^ "}"
-
 (** Equality between variables. *)
 let var_eq (x:var) (y:var) =
   (* we want _physical_ equality here *)
   x == y
+
+(** String representation of a type. *)
+(* The variable already avoids printings the boundaries of variables occurring
+   in their own boundary. *)
+let to_string a =
+  let rec to_string ~already = function
+    | Var x ->
+      if List.exists (var_eq x) already || (x.lower = [] && x.upper = []) then
+        "'a" ^ string_of_int x.id
+      else
+        let already = x::already in
+        let lower = x.lower |> List.map (to_string ~already) |> String.concat ", " in
+        let upper = x.upper |> List.map (to_string ~already) |> String.concat ", " in
+        Printf.sprintf "'a%d@(%s < %s)" x.id lower upper
+    | Ground g -> Ground.to_string g
+    | Arr (a, b) -> to_string ~already a ^ " -> " ^ to_string ~already b
+    | Record r ->
+      let r = List.map (fun (l,a) -> l ^ " : " ^ to_string ~already a) r |> String.concat ", " in
+      "{" ^ r ^ "}"
+  in
+  to_string ~already:[] a
 
 (** Equality between types. *)
 (* Note: we cannot use standard equality here, because it will recurse

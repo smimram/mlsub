@@ -2,4 +2,5 @@ let n = 4;;
 let id = fun x -> x;;
 let ap = fun f -> fun x -> (f x);;
 let ex = fun f -> fun x -> f (f x);;
+let omega = fun x -> (x x);;
 let d = fun f -> { l = f 1 , r = f "a" };;
